@@ -1,0 +1,16 @@
+CHANGELOG plg_clm_show_ext ab 0.8.0
+------------
+
+Legend:
+* -> Security Fix
+# -> Bug Fix
+$ -> Language fix or change
++ -> Addition
+^ -> Change
+% -> Performance Fix
+- -> Removed
+! -> Note
+
+- - - - - 0.8.0 - [20-05-2019] - - - - - - - - - - - - - - - - - - - -
++ Startpunkt
+
