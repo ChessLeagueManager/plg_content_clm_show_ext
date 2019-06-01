@@ -2,12 +2,12 @@
 <extension version="2.5" method="upgrade" type="plugin" group="content">
   <name>plg_content_clm_show_ext</name>
   <author>CLM Team</author>
-  <creationDate>13.05.2019</creationDate>
+  <creationDate>30.05.2019</creationDate>
   <copyright>Copyright (C) 2018-2019 - CLM Team</copyright>
   <license>http://www.gnu.org/licenses/gpl-2.0.html GNU/GPL</license>
   <authorEmail>kbaerthel@t-online.de</authorEmail>
   <authorUrl>chessleaguemanager.de</authorUrl>
-  <version>0.8.0</version>
+  <version>0.9.0</version>
   <description>PLG_CLM_SHOW_EXT_DESC</description>
 
   <files>
@@ -30,13 +30,12 @@
                 <fields name="params">
  
 					<fieldset name="basic">
-						<field name="source1" type="text" default="http://..." label="URL des Datenquelle 1" 
-							description="Wählen Sie die URL von der die Daten eingelesen werden sollen. ( Beispiele : http://www.muster.de oder https://example.org ) " />
-						<field name="source2" type="text" default="http://..." label="URL des Datenquelle 2" 
-							description="Wählen Sie die URL von der die Daten eingelesen werden sollen. ( Beispiele : http://www.muster.de oder https://example.org ) " />
-						<field name="source3" type="text" default="http://..." label="URL des Datenquelle 3" 
-                 			description="Wählen Sie die URL von der die Daten eingelesen werden sollen. ( Beispiele : http://www.muster.de oder https://example.org ) " />
-							
+						<field name="source1" type="text" default="http://..." label="PLG_CLM_SHOW_PARAM_SOURCE_LABEL1" 
+							description="PLG_CLM_SHOW_PARAM_SOURCE_DESC" />
+						<field name="source2" type="text" default="http://..." label="PLG_CLM_SHOW_PARAM_SOURCE_LABEL2" 
+							description="PLG_CLM_SHOW_PARAM_SOURCE_DESC" />
+						<field name="source3" type="text" default="http://..." label="PLG_CLM_SHOW_PARAM_SOURCE_LABEL3" 
+                 			description="PLG_CLM_SHOW_PARAM_SOURCE_DESC" />							
 											   
 				        <field name="ajax" type="hidden"
                             default="2"
