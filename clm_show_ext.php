@@ -188,7 +188,7 @@ class PlgContentClm_show_ext extends JPlugin {
 		}
 		// Test View - Standard ist 0 = Kreuztabelle
 		if (count($my_config) > 3) {
-			if (!is_numeric($my_config[3]) OR !ctype_digit($my_config[3]) OR ($my_config[3] != 0 AND $my_config[3] != 1 AND $my_config[3] != 3)) {
+			if (!is_numeric($my_config[3]) OR !ctype_digit($my_config[3]) OR ($my_config[3] != 0 AND $my_config[3] != 1 AND $my_config[3] != 2 AND $my_config[3] != 3)) {
 				return array(false, JText::_("PLG_CLM_SHOW_ERR_VIEW"));
 			}
 			$view = $my_config[3];
@@ -228,10 +228,10 @@ class PlgContentClm_show_ext extends JPlugin {
 		if ($view == 3 AND ($runde == 0 OR $paar == 0)) {
 				return array(false, JText::_("PLG_CLM_SHOW_ERR_LOG_PAAR"));
 		}
-		if (($view == 0 OR $view == 1) AND $paar != 0) {
+		if (($view == 0 OR $view == 1 OR $view == 2) AND $paar != 0) {
 				$paar = 0; 									// keine Fehlermeldung; Angabe wird nur ignoriert
 		}
-		if (($view == 0 OR $view == 1) AND $runde > 0 AND $dg == 0) {
+		if (($view == 0 OR $view == 1 OR $view == 2) AND $runde > 0 AND $dg == 0) {
 				return array(false, JText::_("PLG_CLM_SHOW_ERR_LOG_DG"));
 		}
 		
@@ -256,7 +256,7 @@ class PlgContentClm_show_ext extends JPlugin {
 		
 		$url .='?lid=' . $liga_id.'&plgview='.$view;
 		$url .= '&runde='.$runde.'&paar='.$paar.'&dg='.$dg;
-//echo "<br>url:"; var_dump($url);
+
 		if (strlen($url) > 150 OR strlen($url) < 10 OR substr_count($url, '?') != 1 OR $this->url_exists($url) === false)
 				return array(false, JText::_("PLG_CLM_SHOW_ERR_URL"), $url);
 		if (!$html = file_get_contents($url)) {
@@ -266,9 +266,13 @@ class PlgContentClm_show_ext extends JPlugin {
 			else
 				return array(false, JText::_("PLG_CLM_SHOW_ERR_CONNECTION"));
 		}
-//echo "<br>html:"; var_dump($html);
-		$xml = new SimpleXMLElement($html);
-//echo "<br>xml:"; var_dump($xml); die();
+
+		if (!$xml = new SimpleXMLElement($html)) {
+			foreach (libxml_get_errors() as $error) {
+				echo "<br>errror:"; var_dump($error);
+			}
+			libxml_clear_errors();
+		}
 		
 		if (isset($xml->error)) {
 //				$error_text = 'PLG_CLM_SHOW_ERR_NO_TOURNAMENT';
@@ -320,6 +324,7 @@ class PlgContentClm_show_ext extends JPlugin {
 		require_once (JPATH_SITE . DS . 'plugins/content/clm_show_ext' . DS . 'css_path.php');
 		//require_once (JPATH_SITE . DS . 'components/com_clm/includes' . DS . 'css_path.php');
 		$html = '<div id="clm">';
+		
 // View ranngliste -----------------------------------------------------------------------------------------------------------------
 		if ($view == 0 OR $view == 1) { 
 		$html .= '
@@ -465,6 +470,94 @@ class PlgContentClm_show_ext extends JPlugin {
 <td class="bp">' . $oneTeam->bp . '</td>
 </tr>';
 			$where++;
+		}
+		
+		$html.= '
+</table>';
+		if ($this->params->get('ajax', 1) == 1) {
+			$html.= '<div style="' . $this->get_css_style($style) . '" id="plg_clm_show_' . $number . '"></div>';
+		}
+		$html.= '
+</div></div></div>
+';
+		}
+		
+// View paarungsliste -----------------------------------------------------------------------------------------------------------------
+		if ($view == 2) { 
+		$spzahl = 8;
+		$html .= '
+<div class="clm"><div id="paarungsliste"><div class="plg_clm_show_ext">
+<table cellpadding="0" cellspacing="0" class="paarungsliste" style="' . $this->get_css_style($style) . '">
+<tr>
+	';
+
+		if ($season != "") {
+			$html.= '<th class="team" colspan="'.$spzahl.'"><div><a target="_blank" href="'.$source.'/index.php/component/clm/?view=paarungsliste&saison='.$sid.'&liga='.$liga_id.'">' . $xml->tname . " - " . $season . '</a></div></th>';
+		} else {
+			$html.= '<th class="team" colspan="'.$spzahl.'"><div><a target="_blank" href="'.$source.'/index.php/component/clm/?view=paarungsliste&liga='.$liga_id.'">' . $xml->tname  . '</a></div></th>';
+		}
+		$html.= '</tr>';
+		$where = 0;
+		$z1 = 0;
+		foreach ($xml->paarungsliste->paarung as $onePaar) {
+			if ($z1 == 0) {
+				$v = $onePaar;
+				//$v->dg = $onePaar->dg;
+				//$v->runde = $onePaar->runde;
+			}
+				  
+			if ($z1 == 0 OR (string)$v->dg != (string)$onePaar->dg OR (string)$v->runde != (string)$onePaar->runde) {
+			//} else {
+				$v->dg = $onePaar->dg;
+				$v->runde = $onePaar->runde;
+				if ($onePaar->rdatum > '1970-01-01') {
+					$rdatum = JHTML::_('date',  $onePaar->rdatum, JText::_('DATE_FORMAT_CLM_F')); 
+					if ($onePaar->startzeit != '00:00:00') $rdatum .= '  '.substr($onePaar->startzeit,0,5);
+				} else {
+					$rdatum = '';
+				}
+				$html.= '<tr>';
+				$html.= '<td class="heim" colspan="5"><div>' . $rdatum . '</div></td>';
+				$html.= '<td class="erg" colspan="3"><div>' . $onePaar->rname . '</div></td>';
+				$html.= '</tr>';
+				$html.= '<tr>';
+				$html.= '<th class="rnd"><div>' . JText::_('PAAR') . '</div></th>';
+				$html.= '<th class="rnd"><div>' . JText::_('TLN') . '</div></th>';
+				$html.= '<th class="rnd"><div>' . JText::_('HOME') . '</div></th>';
+				$html.= '<th class="rnd"><div>' . JText::_('DWZ') . '</div></th>';
+				$html.= '<th class="erg"><div>' . JText::_('RESULT') . '</div></th>';
+				$html.= '<th class="rnd"><div>' . JText::_('TLN') . '</div></th>';
+				$html.= '<th class="rnd"><div>' . JText::_('GUEST') . '</div></th>';
+				$html.= '<th class="rnd"><div>' . JText::_('DWZ') . '</div></th>';
+				$html.= '</tr>';
+				$where = 0;
+			}
+			if ($where % 2 == 0) {
+				$html.= '<tr class="zeile1">';
+			} else {
+				$html.= '<tr class="zeile2">';
+			}
+			$html.= '<td class="paar"> '. $onePaar->paar . '</td>';
+			$html.= '<td class="tln"> '. $onePaar->tln_nr . '</td>';
+			$html.= '<td class="heim"> '. $onePaar->hname . '</td>';
+			$html.= '<td class="dwz"> '. $onePaar->dwz . '</td>';
+			$html.= '<td class="erg"> '. $onePaar->brettpunkte.':'.$onePaar->gbrettpunkte . '</td>';
+			$html.= '<td class="tln"> '. $onePaar->gtln . '</td>';
+			$html.= '<td class="gast"> '. $onePaar->gname . '</td>';
+			$html.= '<td class="dwz"> '. $onePaar->gdwz . '</td>';
+			$html.= '</tr>';
+			if ($onePaar->comment != "") { 
+				if ($where % 2 == 0) {
+					$html.= '<tr class="zeile1">';
+				} else {
+					$html.= '<tr class="zeile2">';
+				}
+				$html.= '<td class="paar"> '. $onePaar->paar . '</td>';
+				$html.= '<td colspan="7"> '. $onePaar->comment . '</td>';
+				$html.= '</tr>';
+			}
+			$where++;
+			$z1++;
 		}
 		
 		$html.= '
