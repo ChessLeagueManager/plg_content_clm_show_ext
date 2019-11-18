@@ -164,8 +164,11 @@ class PlgContentClm_show_ext extends JPlugin {
 			return array(false, JText::_("PLG_CLM_SHOW_ERR_TAG"));
 		}
 		// Test Letzter Parameter ist alphanumerisch -> letzten Parameter ignorieren
-		if (!is_numeric($my_config[count($my_config)-1])) {
-			unset($my_config[count($my_config)-1]);
+		if ((isset($my_config[3]) AND $my_config[3] == 14 AND count($my_config) > 5)
+			OR !isset($my_config[3]) OR $my_config[3] != 14) {
+			if (!is_numeric($my_config[count($my_config)-1])) {
+				unset($my_config[count($my_config)-1]);
+			}
 		}
 		// Test Source-ID - Pflichtangabe
 		if (!is_numeric($my_config[0]) OR !ctype_digit($my_config[0]) OR $my_config[0] < 1 OR $my_config[0] > 3) {
@@ -188,7 +191,7 @@ class PlgContentClm_show_ext extends JPlugin {
 		}
 		// Test View - Standard ist 0 = Kreuztabelle
 		if (count($my_config) > 3) {
-			if (!is_numeric($my_config[3]) OR !ctype_digit($my_config[3]) OR ($my_config[3] != 0 AND $my_config[3] != 1 AND $my_config[3] != 2 AND $my_config[3] != 3)) {
+			if (!is_numeric($my_config[3]) OR !ctype_digit($my_config[3]) OR ($my_config[3] > 4 AND $my_config[3] != 14)) {
 				return array(false, JText::_("PLG_CLM_SHOW_ERR_VIEW"));
 			}
 			$view = $my_config[3];
@@ -196,13 +199,20 @@ class PlgContentClm_show_ext extends JPlugin {
 			$view = 0;
 		}
 		// Test Runde - Standard ist 0 (alle Runden z.B. bei Kreuztabelle) - Pflichtangabe > 0 bei Paarung
-		if (count($my_config) > 4) {
-			if (!is_numeric($my_config[4]) OR !ctype_digit($my_config[4])) {
-				return array(false, JText::_("PLG_CLM_SHOW_ERR_RUNDE"));
+		if ($view < 5) {
+			if (count($my_config) > 4) {
+				if (!is_numeric($my_config[4]) OR !ctype_digit($my_config[4])) {
+					return array(false, JText::_("PLG_CLM_SHOW_ERR_RUNDE"));
+				}
+				$runde = $my_config[4];
+			} else {
+				$runde = 0;
+			}
+		} else {						// view = 14
+			if (count($my_config) < 5) {
+					return array(false, JText::_("PLG_CLM_SHOW_ERR_CLUB"));
 			}
 			$runde = $my_config[4];
-		} else {
-			$runde = 0;
 		}
 		// Test Paar - Standard ist 0 - Pflichtangabe > 0 bei Paarung
 		if (count($my_config) > 5 AND $view != 0) {
@@ -228,13 +238,15 @@ class PlgContentClm_show_ext extends JPlugin {
 		if ($view == 3 AND ($runde == 0 OR $paar == 0)) {
 				return array(false, JText::_("PLG_CLM_SHOW_ERR_LOG_PAAR"));
 		}
-		if (($view == 0 OR $view == 1 OR $view == 2) AND $paar != 0) {
+		if (($view == 0 OR $view == 1 OR $view == 2 OR $view == 14) AND $paar != 0) {
 				$paar = 0; 									// keine Fehlermeldung; Angabe wird nur ignoriert
 		}
 		if (($view == 0 OR $view == 1 OR $view == 2) AND $runde > 0 AND $dg == 0) {
 				return array(false, JText::_("PLG_CLM_SHOW_ERR_LOG_DG"));
 		}
-		
+		if ($view == 4 AND $runde == 0) {					// View Spielplan: parameter runde muss teilnehmer enthalten
+				return array(false, JText::_("PLG_CLM_SHOW_ERR_LOG_PLAN"));
+		}
 		$highlighting[0] = false;
 
 		$protocol = ((!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] != 'off') || $_SERVER['SERVER_PORT'] == 443) ? "https://" : "http://";
@@ -331,7 +343,7 @@ class PlgContentClm_show_ext extends JPlugin {
 <div class="clm"><div id="rangliste"><div class="plg_clm_show_ext">
 <table cellpadding="0" cellspacing="0" class="rangliste" style="' . $this->get_css_style($style) . '">
 <tr>
-	<th class="rang"><div>Rg</div></th>
+	<th class="rang"><div>' . JText::_('RANG') . '</div></th>
 	';
 
 		// einfache Runde oder doppelrundig
@@ -369,10 +381,10 @@ class PlgContentClm_show_ext extends JPlugin {
 			foreach ($xml->kreuzHeader->eH as $eH) {
 				$team++;
 			}
-			$html.= '<th class="rnd"><div>' . 'G' . '</div></th>';
-			$html.= '<th class="rnd"><div>' . 'S' . '</div></th>';
-			$html.= '<th class="rnd"><div>' . 'R' . '</div></th>';
-			$html.= '<th class="rnd"><div>' . 'V' . '</div></th>';
+			$html.= '<th class="rnd"><div>' . JText::_('TABELLE_GAMES_PLAYED') . '</div></th>';
+			$html.= '<th class="rnd"><div>' . JText::_('TABELLE_WINS') . '</div></th>';
+			$html.= '<th class="rnd"><div>' . JText::_('TABELLE_DRAW') . '</div></th>';
+			$html.= '<th class="rnd"><div>' . JText::_('TABELLE_LOST') . '</div></th>';
 		}
 		// check if there are enough teams
 		if ($team == 0) {
@@ -382,8 +394,8 @@ class PlgContentClm_show_ext extends JPlugin {
 			return array(false, JText::_("PLG_CLM_SHOW_ERR_COUNT"));
 		}
 		$html.= '			
-			<th class="mp"><div>MP</div></th>
-			<th class="bp"><div>BP</div></th>
+			<th class="mp"><div>' . JText::_('MP') . '</div></th>
+			<th class="bp"><div>' . JText::_('BP') . '</div></th>
 					</tr>';
 
 		$where = 0;
@@ -635,6 +647,158 @@ class PlgContentClm_show_ext extends JPlugin {
 </div></div></div>
 ';
 		}
+		
+// View spielplan -----------------------------------------------------------------------------------------------------------------
+		if ($view == 4) { 
+		$teilnehmer = $runde;
+		$spzahl = 6;
+		$html .= '
+<div class="clm"><div id="paarungsliste"><div class="plg_clm_show_ext">
+<table cellpadding="0" cellspacing="0" class="paarungsliste" style="' . $this->get_css_style($style) . '">
+<tr>
+	';
+		// Suchen Mannschaftsname
+		$team_name = '';
+		foreach ($xml->paarungsliste->paarung as $onePaar) {
+			if ($onePaar->tln_nr == $teilnehmer) $team_name = $onePaar->hname;
+			if ($onePaar->gtln == $teilnehmer) $team_name = $onePaar->gname;
+			if ($team_name != '') break;
+		}
+		if ($season != "") {
+			$html.= '<th class="team" colspan="'.$spzahl.'"><div><a target="_blank" href="'.$source.'/index.php/component/clm/?view=paarungsliste&saison='.$sid.'&liga='.$liga_id.'">' .$team_name." - ".$xml->tname." - ".$season . '</a></div></th>';
+		} else {
+			$html.= '<th class="team" colspan="'.$spzahl.'"><div><a target="_blank" href="'.$source.'/index.php/component/clm/?view=paarungsliste&liga='.$liga_id.'">' .$team_name." - ".$xml->tname. '</a></div></th>';
+		}
+		$html.= '</tr>';
+		$where = 0;
+		$z1 = 0;
+		foreach ($xml->paarungsliste->paarung as $onePaar) {
+			if ($onePaar->tln_nr != $teilnehmer AND $onePaar->gtln != $teilnehmer) continue;
+				  
+			if ($z1 == 0) {
+				$html.= '<tr>';
+				$html.= '<th class="rnd"><div>' . JText::_('FIXTURE_DATE') . '</div></th>';
+				$html.= '<th class="rnd"><div>' . JText::_('DG') . '</div></th>';
+				$html.= '<th class="rnd"><div>' . JText::_('ROUND') . '</div></th>';
+				$html.= '<th class="rnd"><div>' . JText::_('HOME') . '</div></th>';
+				$html.= '<th class="erg"><div>' . JText::_('RESULT') . '</div></th>';
+				$html.= '<th class="rnd"><div>' . JText::_('GUEST') . '</div></th>';
+				$html.= '</tr>';
+			} 
+			if ($onePaar->rdatum > '1970-01-01') {
+				//$rdatum = JHTML::_('date',  $onePaar->rdatum, JText::_('DATE_FORMAT_CLM_F')); 
+				$rdatum = JHTML::_('date',  $onePaar->rdatum, "d M Y"); 
+				if ($onePaar->startzeit != '00:00:00') $rdatum .= '  '.substr($onePaar->startzeit,0,5);
+			} else {
+				$rdatum = '';
+			}
+			if ($where % 2 == 0) {
+				$html.= '<tr class="zeile1">';
+			} else {
+				$html.= '<tr class="zeile2">';
+			}
+			$html.= '<td class="heim"> ' . $rdatum . '</td>';
+			$html.= '<td class="tln"> '. $onePaar->dg . '</td>';
+			$html.= '<td class="heim">' . $onePaar->rname . '</td>';
+			$html.= '<td class="heim"> '. $onePaar->hname . '</td>';
+			$html.= '<td class="erg"> '. $onePaar->brettpunkte.':'.$onePaar->gbrettpunkte . '</td>';
+			$html.= '<td class="gast"> '. $onePaar->gname . '</td>';
+			$html.= '</tr>';
+			if ($onePaar->comment != "") { 
+				if ($where % 2 == 0) {
+					$html.= '<tr class="zeile1">';
+				} else {
+					$html.= '<tr class="zeile2">';
+				}
+				$html.= '<td colspan="6"> '. $onePaar->comment . '</td>';
+				$html.= '</tr>';
+			}
+			$where++;
+			$z1++;
+		}
+		
+		$html.= '
+</table>';
+		if ($this->params->get('ajax', 1) == 1) {
+			$html.= '<div style="' . $this->get_css_style($style) . '" id="plg_clm_show_' . $number . '"></div>';
+		}
+
+		$html.= '
+</div></div></div>
+';
+		}
+		
+// View spielplan verein -----------------------------------------------------------------------------------------------------------
+		if ($view == 14) { 
+		$club = $runde;
+		$spzahl = 7;
+		$html .= '
+<div class="clm"><div id="paarungsliste"><div class="plg_clm_show_ext">
+<table cellpadding="0" cellspacing="0" class="paarungsliste" style="' . $this->get_css_style($style) . '">
+<tr>
+	';
+		$html.= '<th class="team" colspan="'.$spzahl.'"><div><a target="_blank" href="'.$source.'/index.php/component/clm/?view=schedule&season='.$sid.'&club='.$club.'">' .$xml->cname." - ".$season . '</a></div></th>';
+		$html.= '</tr>';
+		$where = 0;
+		$z1 = 0;
+		foreach ($xml->paarungsliste->paarung as $onePaar) {
+			//if ($onePaar->tln_nr != $teilnehmer AND $onePaar->gtln != $teilnehmer) continue;
+				  
+			if ($z1 == 0) {
+				$html.= '<tr>';
+				$html.= '<th class="rnd"><div>' . JText::_('FIXTURE_DATE') . '</div></th>';
+				$html.= '<th class="rnd"><div>' . JText::_('LEAGUE') . '</div></th>';
+				$html.= '<th class="rnd"><div>' . JText::_('DG') . '</div></th>';
+				$html.= '<th class="rnd"><div>' . JText::_('ROUND') . '</div></th>';
+				$html.= '<th class="rnd"><div>' . JText::_('HOME') . '</div></th>';
+				$html.= '<th class="erg"><div>' . JText::_('RESULT') . '</div></th>';
+				$html.= '<th class="rnd"><div>' . JText::_('GUEST') . '</div></th>';
+				$html.= '</tr>';
+			} 
+			if ($onePaar->rdatum > '1970-01-01') {
+				$rdatum = JHTML::_('date',  $onePaar->rdatum, "d M Y"); 
+				if ($onePaar->startzeit != '00:00:00') $rdatum .= '  '.substr($onePaar->startzeit,0,5);
+			} else {
+				$rdatum = '';
+			}
+			if ($where % 2 == 0) {
+				$html.= '<tr class="zeile1">';
+			} else {
+				$html.= '<tr class="zeile2">';
+			}
+			$html.= '<td class="heim"> ' . $rdatum . '</td>';
+			$html.= '<td class="heim"> ' . $onePaar->lname . '</td>';
+			$html.= '<td class="tln"> '. $onePaar->dg . '</td>';
+			$html.= '<td class="heim">' . $onePaar->rname . '</td>';
+			$html.= '<td class="heim"> '. $onePaar->hname . '</td>';
+			$html.= '<td class="erg"> '. $onePaar->brettpunkte.':'.$onePaar->gbrettpunkte . '</td>';
+			$html.= '<td class="gast"> '. $onePaar->gname . '</td>';
+			$html.= '</tr>';
+			if ($onePaar->comment != "") { 
+				if ($where % 2 == 0) {
+					$html.= '<tr class="zeile1">';
+				} else {
+					$html.= '<tr class="zeile2">';
+				}
+				$html.= '<td colspan="6"> '. $onePaar->comment . '</td>';
+				$html.= '</tr>';
+			}
+			$where++;
+			$z1++;
+		}
+		
+		$html.= '
+</table>';
+		if ($this->params->get('ajax', 1) == 1) {
+			$html.= '<div style="' . $this->get_css_style($style) . '" id="plg_clm_show_' . $number . '"></div>';
+		}
+
+		$html.= '
+</div></div></div>
+';
+		}
+				
+		
 		$html .= '</div>';
 		return array(true, $html);
 	}
