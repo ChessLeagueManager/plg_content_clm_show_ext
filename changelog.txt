@@ -11,7 +11,8 @@ $ -> Language fix or change
 - -> Removed
 ! -> Note
 
-- - - - - 0.9.2 - [xx-xx-2019] - - - - - - - - - - - - - - - - - - - -
+- - - - - 1.0.0 - [18-11-2019] - - - - - - - - - - - - - - - - - - - -
+- - - - - 0.9.2 - [18-11-2019] - - - - - - - - - - - - - - - - - - - -
 + View Spielplan Mannschaft
 + View Spielplan Verein
 
