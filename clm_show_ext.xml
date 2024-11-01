@@ -2,7 +2,7 @@
 <extension version="2.5" method="upgrade" type="plugin" group="content">
   <name>plg_content_clm_show_ext</name>
   <author>CLM Team</author>
-  <creationDate>18.11.2019</creationDate>
+  <creationDate>19.10.2024</creationDate>
   <copyright>Copyright (C) 2018-2019 - CLM Team</copyright>
   <license>http://www.gnu.org/licenses/gpl-2.0.html GNU/GPL</license>
   <authorEmail>kbaerthel@t-online.de</authorEmail>
