@@ -1,19 +1,25 @@
 <?php
 /**
- * @ Chess League Manager (CLM) Component 
- * @Copyright (C) 2008-2019 CLM Team.  All rights reserved
+ * @ Chess League Manager (CLM) Content Plugin 
+ * @Copyright (C) 2008-2026 CLM Team.  All rights reserved
  * @license http://www.gnu.org/copyleft/gpl.html GNU/GPL
- * @link http://www.chessleaguemanager.de
+ * @link https://chessleaguemanager.org
 */
 // kein direkter Zugriff über eine Url sondern nur über's Joomla-Framework
 defined('_JEXEC') or die('Unerlaubter Zugriff');
 // lade die JPlugin-Klasse, von der unsere eigene Plugin-Klasse abgeleitet wird
 jimport('joomla.plugin.plugin');
+
+JLoader::registerAlias('JPlugin', '\\Joomla\\CMS\\Plugin\\CMSPlugin', '6.0');
+use Joomla\CMS\Factory;
+use Joomla\CMS\Language\Text;
+use Joomla\CMS\HTML\HTMLHelper;
+
 // Rumpf unserer Plugin-Klasse
 class PlgContentClm_show_ext extends JPlugin {
 	function __construct(&$subject, $my_config) {
 		if(!defined("DS")){define('DS', DIRECTORY_SEPARATOR);} // fix for Joomla 3.2
-		$lang = JFactory::getLanguage();
+		$lang = Factory::getLanguage();
 		//$lang->load('plg_content_clm_show_ext', JPATH_ADMINISTRATOR);
 		$lang->load('plg_content_clm_show_ext', JPATH_SITE . DS . 'plugins/content/clm_show_ext');
 		parent::__construct($subject, $my_config);
@@ -152,7 +158,7 @@ class PlgContentClm_show_ext extends JPlugin {
 	}
 	protected function mm_clmligen_print($my_config, $old, $number) {
 		if (!ini_get('allow_url_fopen')) {
-			return array(false, JText::_("PLG_CLM_SHOW_ERR_FOPEN"));
+			return array(false, Text::_("PLG_CLM_SHOW_ERR_FOPEN"));
 		}
 		if (!is_numeric($my_config)) {
 			$my_config = explode(":", $my_config);
@@ -161,7 +167,7 @@ class PlgContentClm_show_ext extends JPlugin {
 		}
 		// Test Anzahl Parameter
 		if (count($my_config) > 7 || count($my_config) < 2) {
-			return array(false, JText::_("PLG_CLM_SHOW_ERR_TAG"));
+			return array(false, Text::_("PLG_CLM_SHOW_ERR_TAG"));
 		}
 		// Test Letzter Parameter ist alphanumerisch -> letzten Parameter ignorieren
 		if ((isset($my_config[3]) AND $my_config[3] == 14 AND count($my_config) > 5)
@@ -172,18 +178,18 @@ class PlgContentClm_show_ext extends JPlugin {
 		}
 		// Test Source-ID - Pflichtangabe
 		if (!is_numeric($my_config[0]) OR !ctype_digit($my_config[0]) OR $my_config[0] < 1 OR $my_config[0] > 3) {
-			return array(false, JText::_("PLG_CLM_SHOW_ERR_SOURCE"));
+			return array(false, Text::_("PLG_CLM_SHOW_ERR_SOURCE"));
 		}
 		$source_id = $my_config[0];
 		// Test Liga-ID - Pflichtangabe
 		if (!is_numeric($my_config[1]) OR !ctype_digit($my_config[1])) {
-			return array(false, JText::_("PLG_CLM_SHOW_ERR_ID"));
+			return array(false, Text::_("PLG_CLM_SHOW_ERR_ID"));
 		}
 		$liga_id = $my_config[1];
 		// Test Style-Parameter - Standard ist 0
 		if (count($my_config) > 2) {
 			if (!is_numeric($my_config[2]) || ($my_config[2] < 0) || ($my_config[2] > 6)) {
-				return array(false, JText::_("PLG_CLM_SHOW_ERR_STYLE"));
+				return array(false, Text::_("PLG_CLM_SHOW_ERR_STYLE"));
 			}
 			$style = $my_config[2];
 		} else {
@@ -192,7 +198,7 @@ class PlgContentClm_show_ext extends JPlugin {
 		// Test View - Standard ist 0 = Kreuztabelle
 		if (count($my_config) > 3) {
 			if (!is_numeric($my_config[3]) OR !ctype_digit($my_config[3]) OR ($my_config[3] > 4 AND $my_config[3] != 14)) {
-				return array(false, JText::_("PLG_CLM_SHOW_ERR_VIEW"));
+				return array(false, Text::_("PLG_CLM_SHOW_ERR_VIEW"));
 			}
 			$view = $my_config[3];
 		} else {
@@ -202,7 +208,7 @@ class PlgContentClm_show_ext extends JPlugin {
 		if ($view < 5) {
 			if (count($my_config) > 4) {
 				if (!is_numeric($my_config[4]) OR !ctype_digit($my_config[4])) {
-					return array(false, JText::_("PLG_CLM_SHOW_ERR_RUNDE"));
+					return array(false, Text::_("PLG_CLM_SHOW_ERR_RUNDE"));
 				}
 				$runde = $my_config[4];
 			} else {
@@ -210,14 +216,14 @@ class PlgContentClm_show_ext extends JPlugin {
 			}
 		} else {						// view = 14
 			if (count($my_config) < 5) {
-					return array(false, JText::_("PLG_CLM_SHOW_ERR_CLUB"));
+					return array(false, Text::_("PLG_CLM_SHOW_ERR_CLUB"));
 			}
 			$runde = $my_config[4];
 		}
 		// Test Paar - Standard ist 0 - Pflichtangabe > 0 bei Paarung
 		if (count($my_config) > 5 AND $view != 0) {
 			if (!is_numeric($my_config[5]) OR !ctype_digit($my_config[5])) {
-				return array(false, JText::_("PLG_CLM_SHOW_ERR_PAAR"));
+				return array(false, Text::_("PLG_CLM_SHOW_ERR_PAAR"));
 			}
 			$paar = $my_config[5];
 		} else {
@@ -226,7 +232,7 @@ class PlgContentClm_show_ext extends JPlugin {
 		// Test Durchgang - Standard ist 1
 		if (count($my_config) > 6) {
 			if (!is_numeric($my_config[6]) OR !ctype_digit($my_config[6])) {
-				return array(false, JText::_("PLG_CLM_SHOW_ERR_DG"));
+				return array(false, Text::_("PLG_CLM_SHOW_ERR_DG"));
 			}
 			$dg = $my_config[6];
 		} else {
@@ -236,16 +242,16 @@ class PlgContentClm_show_ext extends JPlugin {
 		// Kombi-Tests der Parameter
 		// Test Paarung
 		if ($view == 3 AND ($runde == 0 OR $paar == 0)) {
-				return array(false, JText::_("PLG_CLM_SHOW_ERR_LOG_PAAR"));
+				return array(false, Text::_("PLG_CLM_SHOW_ERR_LOG_PAAR"));
 		}
 		if (($view == 0 OR $view == 1 OR $view == 2 OR $view == 14) AND $paar != 0) {
 				$paar = 0; 									// keine Fehlermeldung; Angabe wird nur ignoriert
 		}
 		if (($view == 0 OR $view == 1 OR $view == 2) AND $runde > 0 AND $dg == 0) {
-				return array(false, JText::_("PLG_CLM_SHOW_ERR_LOG_DG"));
+				return array(false, Text::_("PLG_CLM_SHOW_ERR_LOG_DG"));
 		}
 		if ($view == 4 AND $runde == 0) {					// View Spielplan: parameter runde muss teilnehmer enthalten
-				return array(false, JText::_("PLG_CLM_SHOW_ERR_LOG_PLAN"));
+				return array(false, Text::_("PLG_CLM_SHOW_ERR_LOG_PLAN"));
 		}
 		$highlighting[0] = false;
 
@@ -270,13 +276,13 @@ class PlgContentClm_show_ext extends JPlugin {
 		$url .= '&runde='.$runde.'&paar='.$paar.'&dg='.$dg;
 
 		if (strlen($url) > 150 OR strlen($url) < 10 OR substr_count($url, '?') != 1 OR $this->url_exists($url) === false)
-				return array(false, JText::_("PLG_CLM_SHOW_ERR_URL"), $url);
+				return array(false, Text::_("PLG_CLM_SHOW_ERR_URL"), $url);
 		if (!$html = file_get_contents($url)) {
 			$url0 = $source.'/';
 			if ($this->url_exists ( $url0 ) )
-				return array(false, JText::_("PLG_CLM_SHOW_ERR_VERSION"));
+				return array(false, Text::_("PLG_CLM_SHOW_ERR_VERSION"));
 			else
-				return array(false, JText::_("PLG_CLM_SHOW_ERR_CONNECTION"));
+				return array(false, Text::_("PLG_CLM_SHOW_ERR_CONNECTION"));
 		}
 
 		if (!$xml = new SimpleXMLElement($html)) {
@@ -288,7 +294,7 @@ class PlgContentClm_show_ext extends JPlugin {
 		
 		if (isset($xml->error)) {
 //				$error_text = 'PLG_CLM_SHOW_ERR_NO_TOURNAMENT';
-				return array(false, JText::_($xml->error));
+				return array(false, Text::_($xml->error));
 		}
 
 // Aufbereitung einzelner Liga-Details
@@ -343,7 +349,7 @@ class PlgContentClm_show_ext extends JPlugin {
 <div class="clm"><div id="rangliste"><div class="plg_clm_show_ext">
 <table cellpadding="0" cellspacing="0" class="rangliste" style="' . $this->get_css_style($style) . '">
 <tr>
-	<th class="rang"><div>' . JText::_('RANG') . '</div></th>
+	<th class="rang"><div>' . Text::_('RANG') . '</div></th>
 	';
 
 		// einfache Runde oder doppelrundig
@@ -381,21 +387,21 @@ class PlgContentClm_show_ext extends JPlugin {
 			foreach ($xml->kreuzHeader->eH as $eH) {
 				$team++;
 			}
-			$html.= '<th class="rnd"><div>' . JText::_('TABELLE_GAMES_PLAYED') . '</div></th>';
-			$html.= '<th class="rnd"><div>' . JText::_('TABELLE_WINS') . '</div></th>';
-			$html.= '<th class="rnd"><div>' . JText::_('TABELLE_DRAW') . '</div></th>';
-			$html.= '<th class="rnd"><div>' . JText::_('TABELLE_LOST') . '</div></th>';
+			$html.= '<th class="rnd"><div>' . Text::_('TABELLE_GAMES_PLAYED') . '</div></th>';
+			$html.= '<th class="rnd"><div>' . Text::_('TABELLE_WINS') . '</div></th>';
+			$html.= '<th class="rnd"><div>' . Text::_('TABELLE_DRAW') . '</div></th>';
+			$html.= '<th class="rnd"><div>' . Text::_('TABELLE_LOST') . '</div></th>';
 		}
 		// check if there are enough teams
 		if ($team == 0) {
-			return array(false, JText::_("PLG_CLM_SHOW_ERR_BAD"));
+			return array(false, Text::_("PLG_CLM_SHOW_ERR_BAD"));
 		}
 		if ($team < $max_ab + $max_auf) {
-			return array(false, JText::_("PLG_CLM_SHOW_ERR_COUNT"));
+			return array(false, Text::_("PLG_CLM_SHOW_ERR_COUNT"));
 		}
 		$html.= '			
-			<th class="mp"><div>' . JText::_('MP') . '</div></th>
-			<th class="bp"><div>' . JText::_('BP') . '</div></th>
+			<th class="mp"><div>' . Text::_('MP') . '</div></th>
+			<th class="bp"><div>' . Text::_('BP') . '</div></th>
 					</tr>';
 
 		$where = 0;
@@ -523,7 +529,7 @@ class PlgContentClm_show_ext extends JPlugin {
 				$v->dg = $onePaar->dg;
 				$v->runde = $onePaar->runde;
 				if ($onePaar->rdatum > '1970-01-01') {
-					$rdatum = JHTML::_('date',  $onePaar->rdatum, JText::_('DATE_FORMAT_CLM_F')); 
+					$rdatum = HTMLHelper::_('date',  $onePaar->rdatum, Text::_('DATE_FORMAT_CLM_F')); 
 					if ($onePaar->startzeit != '00:00:00') $rdatum .= '  '.substr($onePaar->startzeit,0,5);
 				} else {
 					$rdatum = '';
@@ -533,14 +539,14 @@ class PlgContentClm_show_ext extends JPlugin {
 				$html.= '<td class="erg" colspan="3"><div>' . $onePaar->rname . '</div></td>';
 				$html.= '</tr>';
 				$html.= '<tr>';
-				$html.= '<th class="rnd"><div>' . JText::_('PAAR') . '</div></th>';
-				$html.= '<th class="rnd"><div>' . JText::_('TLN') . '</div></th>';
-				$html.= '<th class="rnd"><div>' . JText::_('HOME') . '</div></th>';
-				$html.= '<th class="rnd"><div>' . JText::_('DWZ') . '</div></th>';
-				$html.= '<th class="erg"><div>' . JText::_('RESULT') . '</div></th>';
-				$html.= '<th class="rnd"><div>' . JText::_('TLN') . '</div></th>';
-				$html.= '<th class="rnd"><div>' . JText::_('GUEST') . '</div></th>';
-				$html.= '<th class="rnd"><div>' . JText::_('DWZ') . '</div></th>';
+				$html.= '<th class="rnd"><div>' . Text::_('PAAR') . '</div></th>';
+				$html.= '<th class="rnd"><div>' . Text::_('TLN') . '</div></th>';
+				$html.= '<th class="rnd"><div>' . Text::_('HOME') . '</div></th>';
+				$html.= '<th class="rnd"><div>' . Text::_('DWZ') . '</div></th>';
+				$html.= '<th class="erg"><div>' . Text::_('RESULT') . '</div></th>';
+				$html.= '<th class="rnd"><div>' . Text::_('TLN') . '</div></th>';
+				$html.= '<th class="rnd"><div>' . Text::_('GUEST') . '</div></th>';
+				$html.= '<th class="rnd"><div>' . Text::_('DWZ') . '</div></th>';
 				$html.= '</tr>';
 				$where = 0;
 			}
@@ -677,17 +683,17 @@ class PlgContentClm_show_ext extends JPlugin {
 				  
 			if ($z1 == 0) {
 				$html.= '<tr>';
-				$html.= '<th class="rnd"><div>' . JText::_('FIXTURE_DATE') . '</div></th>';
-				$html.= '<th class="rnd"><div>' . JText::_('DG') . '</div></th>';
-				$html.= '<th class="rnd"><div>' . JText::_('ROUND') . '</div></th>';
-				$html.= '<th class="rnd"><div>' . JText::_('HOME') . '</div></th>';
-				$html.= '<th class="erg"><div>' . JText::_('RESULT') . '</div></th>';
-				$html.= '<th class="rnd"><div>' . JText::_('GUEST') . '</div></th>';
+				$html.= '<th class="rnd"><div>' . Text::_('FIXTURE_DATE') . '</div></th>';
+				$html.= '<th class="rnd"><div>' . Text::_('DG') . '</div></th>';
+				$html.= '<th class="rnd"><div>' . Text::_('ROUND') . '</div></th>';
+				$html.= '<th class="rnd"><div>' . Text::_('HOME') . '</div></th>';
+				$html.= '<th class="erg"><div>' . Text::_('RESULT') . '</div></th>';
+				$html.= '<th class="rnd"><div>' . Text::_('GUEST') . '</div></th>';
 				$html.= '</tr>';
 			} 
 			if ($onePaar->rdatum > '1970-01-01') {
 				//$rdatum = JHTML::_('date',  $onePaar->rdatum, JText::_('DATE_FORMAT_CLM_F')); 
-				$rdatum = JHTML::_('date',  $onePaar->rdatum, "d M Y"); 
+				$rdatum = HTMLHelper::_('date',  $onePaar->rdatum, "d M Y"); 
 				if ($onePaar->startzeit != '00:00:00') $rdatum .= '  '.substr($onePaar->startzeit,0,5);
 			} else {
 				$rdatum = '';
@@ -746,17 +752,17 @@ class PlgContentClm_show_ext extends JPlugin {
 				  
 			if ($z1 == 0) {
 				$html.= '<tr>';
-				$html.= '<th class="rnd"><div>' . JText::_('FIXTURE_DATE') . '</div></th>';
-				$html.= '<th class="rnd"><div>' . JText::_('LEAGUE') . '</div></th>';
-				$html.= '<th class="rnd"><div>' . JText::_('DG') . '</div></th>';
-				$html.= '<th class="rnd"><div>' . JText::_('ROUND') . '</div></th>';
-				$html.= '<th class="rnd"><div>' . JText::_('HOME') . '</div></th>';
-				$html.= '<th class="erg"><div>' . JText::_('RESULT') . '</div></th>';
-				$html.= '<th class="rnd"><div>' . JText::_('GUEST') . '</div></th>';
+				$html.= '<th class="rnd"><div>' . Text::_('FIXTURE_DATE') . '</div></th>';
+				$html.= '<th class="rnd"><div>' . Text::_('LEAGUE') . '</div></th>';
+				$html.= '<th class="rnd"><div>' . Text::_('DG') . '</div></th>';
+				$html.= '<th class="rnd"><div>' . Text::_('ROUND') . '</div></th>';
+				$html.= '<th class="rnd"><div>' . Text::_('HOME') . '</div></th>';
+				$html.= '<th class="erg"><div>' . Text::_('RESULT') . '</div></th>';
+				$html.= '<th class="rnd"><div>' . Text::_('GUEST') . '</div></th>';
 				$html.= '</tr>';
 			} 
 			if ($onePaar->rdatum > '1970-01-01') {
-				$rdatum = JHTML::_('date',  $onePaar->rdatum, "d M Y"); 
+				$rdatum = HTMLHelper::_('date',  $onePaar->rdatum, "d M Y"); 
 				if ($onePaar->startzeit != '00:00:00') $rdatum .= '  '.substr($onePaar->startzeit,0,5);
 			} else {
 				$rdatum = '';
